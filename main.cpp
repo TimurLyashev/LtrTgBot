@@ -4,12 +4,10 @@
 #include <exception>
 #include <fstream>
 #include <vector>
-#include <regex>
 
 #include <tgbot/tgbot.h>
 #include <nlohmann/json.hpp>
 #include <curl/curl.h>
-#include <sqlite3.h>
 
 using json = nlohmann::json;
 
@@ -67,17 +65,6 @@ int main() {
     getline(botTokenFile, botToken);
 
     std::vector<userType> userDB;
-    sqlite3 *userDBsqlite;
-    char *zErrMsg = 0;
-    int rc;
-
-    rc = sqlite3_open("user.db", &userDBsqlite);
-    if( rc ) {
-          fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(userDBsqlite));
-          return(0);
-       } else {
-          fprintf(stdout, "Opened database successfully\n");
-       }
 
     std::ifstream weatherTokenFile("weatherTokenFile");
     std::string weatherToken;
