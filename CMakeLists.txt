@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.4)
-project(LtrTgBot)
+project(LtrWeatherBot)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
 set(Boost_USE_MULTITHREADED ON)
@@ -16,6 +16,6 @@ if (CURL_FOUND)
     add_definitions(-DHAVE_CURL)
 endif()
 
-add_executable(LtrTgBot main.cpp "sqlitedb.h")
+add_executable(LtrWeatherBot main.cpp "sqlitedb.h")
 
-target_link_libraries(LtrTgBot /usr/local/lib/libTgBot.a ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES} sqlite3 sqlpp11-connector-sqlite3)
+target_link_libraries(LtrWeatherBot /usr/local/lib/libTgBot.a ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES} sqlite3 sqlpp11-connector-sqlite3)
