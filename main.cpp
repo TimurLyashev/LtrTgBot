@@ -4,12 +4,20 @@
 #include <exception>
 #include <fstream>
 #include <vector>
+#include <cassert>
 
 #include <tgbot/tgbot.h>
 #include <nlohmann/json.hpp>
 #include <curl/curl.h>
+#include <sqlite3.h>
+#include <sqlpp11/sqlite3/sqlite3.h>
+#include <sqlpp11/sqlpp11.h>
+#include <sqlpp11/custom_query.h>
+
+#include "sqlitedb.h"
 
 using json = nlohmann::json;
+namespace sql = sqlpp::sqlite3;
 
 size_t CurlWrite_CallbackFunc_StdString(void *contents, size_t size, size_t nmemb, std::string *s)
 {
@@ -66,6 +74,32 @@ int main() {
 
     std::vector<userType> userDB;
 
+    sql::connection_config config;
+    config.path_to_database = "LtrWeatherBot.db";
+    config.flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+    config.debug = true;
+
+    sql::connection db(config);
+    userType newUser;
+    std::cerr << __FILE__ << ": " << __LINE__ << std::endl;
+        db.execute("CREATE TABLE IF NOT EXISTS USERS("  \
+                   "ID             INT         PRIMARY KEY         NOT NULL," \
+                   "CITY           CHAR(20)                        NOT NULL," \
+                   "COUNTRY        CHAR(5)                         NOT NULL," \
+                   "LANG           CHAR(5)                         NOT NULL);");
+
+
+        db::USERS usersTab;
+            // explicit all_of(usersTab)
+            for(const auto& row : db(select(all_of(usersTab)).from(usersTab).unconditionally()))
+            {
+                newUser.id = row.ID;
+                newUser.city = row.CITY;
+                newUser.country = row.COUNTRY;
+                newUser.lang = row.LANG;
+                userDB.push_back(newUser);
+            };
+
     std::ifstream weatherTokenFile("weatherTokenFile");
     std::string weatherToken;
     getline(weatherTokenFile, weatherToken);
@@ -89,7 +123,7 @@ int main() {
 
     TgBot::Bot bot(botToken);
 
-    userType newUser;
+
 
     bot.getEvents().onCommand("start", [&bot, &userDB](TgBot::Message::Ptr message) {
         if (findUser(userDB,message->from->id)==userDB.end()) {
@@ -120,7 +154,7 @@ int main() {
 
     });
 
-    bot.getEvents().onCommand("setcity", [&bot, &userDB, &newUser](TgBot::Message::Ptr message) {
+    bot.getEvents().onCommand("setcity", [&bot, &userDB, &newUser, &db, &usersTab](TgBot::Message::Ptr message) {
         std::string setcity = message->text;
         if (setcity.size() <9) {
             bot.getApi().sendMessage(message->chat->id, "Пример: /setcity Moscow");
@@ -133,15 +167,17 @@ int main() {
                 newUser.id = message->from->id;
                 newUser.city = setcity;
                 userDB.push_back(newUser);
+                db(insert_into(usersTab).set(usersTab.ID = newUser.id, usersTab.CITY = newUser.city, usersTab.COUNTRY = newUser.country, usersTab.LANG = newUser.lang));
                 bot.getApi().sendMessage(message->chat->id, "Выбран город: " + setcity);
         } else {
             user->city = setcity;
+            db(update(usersTab).set(usersTab.CITY = setcity).where(usersTab.ID.in(user->id)));
             bot.getApi().sendMessage(message->chat->id, "Выбран город: " + setcity);
         }
         }
     });
 
-    bot.getEvents().onCommand("setcountry", [&bot, &userDB, &newUser](TgBot::Message::Ptr message) {
+    bot.getEvents().onCommand("setcountry", [&bot, &userDB, &newUser, &db, &usersTab](TgBot::Message::Ptr message) {
         std::string setcountry = message->text;
         if (setcountry.size() < 12) {
             bot.getApi().sendMessage(message->chat->id, "Пример: /setcountry RU");
@@ -153,9 +189,11 @@ int main() {
                 newUser.id = message->from->id;
                 newUser.country = setcountry;
                 userDB.push_back(newUser);
+                db(insert_into(usersTab).set(usersTab.ID = newUser.id, usersTab.CITY = newUser.city, usersTab.COUNTRY = newUser.country, usersTab.LANG = newUser.lang));
                 bot.getApi().sendMessage(message->chat->id, "Выбрана страна: " + setcountry);
         } else {
             user->country = setcountry;
+            db(update(usersTab).set(usersTab.COUNTRY = setcountry).where(usersTab.ID.in(user->id)));
             bot.getApi().sendMessage(message->chat->id, "Выбрана страна: " + setcountry);
         }
         }

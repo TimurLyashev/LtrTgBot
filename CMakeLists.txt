@@ -3,6 +3,8 @@ project(LtrTgBot)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
 set(Boost_USE_MULTITHREADED ON)
+set(SOURCE lib.cpp)
+set(HEADER sqlitedb.h)
 
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -14,6 +16,6 @@ if (CURL_FOUND)
     add_definitions(-DHAVE_CURL)
 endif()
 
-add_executable(LtrTgBot main.cpp)
+add_executable(LtrTgBot main.cpp "sqlitedb.h")
 
-target_link_libraries(LtrTgBot /usr/local/lib/libTgBot.a ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES})
+target_link_libraries(LtrTgBot /usr/local/lib/libTgBot.a ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES} sqlite3 sqlpp11-connector-sqlite3)
